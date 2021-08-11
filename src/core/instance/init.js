@@ -50,14 +50,14 @@ export function initMixin (Vue: Class<Component>) {
     }
     // expose real self
     vm._self = vm
-    initLifecycle(vm)
-    initEvents(vm)
-    initRender(vm)
-    callHook(vm, 'beforeCreate')
+    initLifecycle(vm) // 初始化生命周期
+    initEvents(vm) // 初始化事件中心
+    initRender(vm) // 初始化渲染
+    callHook(vm, 'beforeCreate') // 调用 beforeCreate 钩子
     initInjections(vm) // resolve injections before data/props
-    initState(vm)
+    initState(vm) // 初始化 data、props、computed、watcher 等等
     initProvide(vm) // resolve provide after data/props
-    callHook(vm, 'created')
+    callHook(vm, 'created') // 调用 created钩子 这个阶段已经可以调用方法和访问数据，但是还不能访问DOM
 
     /* istanbul ignore if */
     if (process.env.NODE_ENV !== 'production' && config.performance && mark) {
@@ -65,7 +65,8 @@ export function initMixin (Vue: Class<Component>) {
       mark(endTag)
       measure(`vue ${vm._name} init`, startTag, endTag)
     }
-
+    // 在初始化的最后，检测到如果有 el 属性，则调用 vm.$mount 方法挂载 vm，
+    // 挂载的目标就是把模板渲染成最终的 DOM
     if (vm.$options.el) {
       vm.$mount(vm.$options.el)
     }

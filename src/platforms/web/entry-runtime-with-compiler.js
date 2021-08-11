@@ -11,14 +11,18 @@ import { mark, measure } from "core/util/perf";
  * ==================
  * 在代码的最后面 又把Vue导出了 我们在项目中引入使用Vue的时候 其实就是使用的当前这个文件导出的Vue
  * 在我们去New Vue(options)的时候做了什么？要追溯到 定义Vue构造函数的文件下 core/instance/index.js
- * 发现Vue构造函数内只做了一件事 this._init(options) 在哪里定义了这个方法呢？
- * 检索了一下 在initMixin(Vue) 这个方法里 core/instance/init.js  Vue.prototype._init = function (options?: Object) {}
- * 然后把自己（函数）本身当作参数传入了 xxxMixn 方法中 执行完毕后把Vue导出
+ * 发现Vue构造函数内只做了一件事 this._init(options)
+ * 然后把自己（函数）本身当作参数传入了 xxxMixn 方法中 依次执行
  * initMixin(Vue) 初始化 生命周期错误
  * stateMixin(Vue) vuex相关？
  * eventsMixin(Vue) 初始化事件 methods
  * lifecycleMixin(Vue) 初始化 生命周期？
  * renderMixin(Vue) 初始化渲染相关？
+ * 执行完毕后把Vue导出
+ *
+ * 在initMixin(Vue) 这个方法里 core/instance/init.js 里面定义了this._init方法
+ * Vue.prototype._init = function (options?: Object) {}
+ * Vue 初始化主要就干了几件事情，合并配置，初始化生命周期，初始化事件中心，初始化渲染，初始化 data、props、computed、watcher 等等。
  *
  */
 import Vue from "./runtime/index";
