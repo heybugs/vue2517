@@ -131,6 +131,16 @@ export function lifecycleMixin (Vue: Class<Component>) {
   }
 }
 
+/**
+ *
+ * mountComponent 核心是先实例化一个渲染函数Watcher 然后在这个实例中传入参数 其中一个参数是一个函数updateComponent方法
+ * 在updateComponent方法中 调用量vm._render生成虚拟的Node 以后称为 VNode
+ * 之后最终通过 vm._update 将VNode 更新为真是DOM
+ * @param {*} vm
+ * @param {*} el
+ * @param {*} hydrating
+ * @returns
+ */
 export function mountComponent (
   vm: Component,
   el: ?Element,

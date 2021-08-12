@@ -38,7 +38,21 @@ const idToTemplate = cached((id) => {
   return el && el.innerHTML;
 });
 
+// 缓存了原型上的 $mount 方法，再重新定义该方法
 const mount = Vue.prototype.$mount;
+/**
+ * 如果没有定义 render 方法，则会把 el 或者 template 字符串转换成 render 方法。
+ * 在 Vue 2.0 版本中，所有 Vue 的组件的渲染最终都需要 render 方法，无论我们是用单文件 .vue 方式开发组件，
+ * 还是写了 el 或者 template 属性，最终都会转换成 render 方法，那么这个过程是 Vue 的一个“在线编译”的过程，
+ * 它是调用 compileToFunctions 方法实现的编译过程。最后，调用原先原型上的 $mount 方法挂载。
+ * @param {*} el
+ * @param {*} hydrating
+ * @returns
+ * 原先原型上的 $mount 方法在 src/platform/web/runtime/index.js 中定义，
+ * 之所以这么设计完全是为了复用，因为它是可以被 runtime only 版本的 Vue 直接使用的
+ * ======   ======
+ * $mount 方法实际上会去调用 mountComponent 方法，这个方法定义在 src/core/instance/lifecycle.js 文件中
+ */
 Vue.prototype.$mount = function (
   el?: string | Element,
   hydrating?: boolean
@@ -107,6 +121,11 @@ Vue.prototype.$mount = function (
       }
     }
   }
+  /**
+   * 最后，调用原先原型上的 $mount 方法挂载
+   * 这个方法定义在  src\platforms\web\runtime\index.js
+   * 他实质上去调用了 mountComponent(this, el, hydrating) 这个方法
+   */
   return mount.call(this, el, hydrating);
 };
 

@@ -33,12 +33,20 @@ extend(Vue.options.components, platformComponents);
 // install platform patch function
 Vue.prototype.__patch__ = inBrowser ? patch : noop;
 
+/**
+ * 原先原型上的 $mount 方法在 src/platform/web/runtime/index.js 中定义，
+ * 之所以这么设计完全是为了复用，因为它是可以被 runtime only 版本的 Vue 直接使用的
+ */
 // public mount method
 Vue.prototype.$mount = function (
   el?: string | Element,
   hydrating?: boolean
 ): Component {
   el = el && inBrowser ? query(el) : undefined;
+  /**
+   *  mountComponent 方法会完成整个渲染工作，其中包括最核心的 2 个方法：vm._render 和 vm._update。
+   *  这个方法里会调用 beforeMount 和 mounted 和 beforeUpdate 这三个钩子函数
+   */
   return mountComponent(this, el, hydrating);
 };
 
