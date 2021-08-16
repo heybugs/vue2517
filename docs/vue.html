@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>vue2 响应式原理</title>
+  </head>
+
+  <body>
+    <h2 id="test"></h2>
+    <button id="but">+1</button>
+    <script>
+      /**
+       *  2、window.target或者Dep.target到底是什么？
+        在学习理解Vue2响应式原理的时候，困扰我很久的一个问题就是window.target或者Dep.target到底是什么？
+
+        事实上，window.target或者Dep.target其实就是一个watcher对象，我们在dep实例中收集watcher对象的目的就是在数据发生更新时，能够调用已经收集到的watcher对象的update方法来更新视图。
+
+        3、初始化过程和数据被修改后的过程:
+
+        1）初始化过程:
+        实例化Vue
+        调用 Observer类 中的 defineReactive 方法监听对象中的数据 —— Watcher构造函数被调用 —— 触发被监听数据的get方法 —— Dep收集到依赖。
+        2）数据被修改后的过程:
+        数据被修改 ——
+        触发被监听数据的set方法 —— 调用dep.notify方法——触发已经收集到subs数组中的每一个依赖的update方法（定义在watcher中）—— 视图更新。
+      */
+
+      // Watcher类，用于在数据发生变化时更新视图
+      class Watcher {
+        constructor(vm, exp, cb) {
+          this.vm = vm;
+          this.exp = exp;
+          this.cb = cb;
+          this.value = this.get(); //在watcher被实例化的时候调用下文的get方法
+        }
+        get() {
+          Dep.target = this; //缓存当前的this，this是一个watcher对象
+          const value = this.vm.data[this.exp]; //这段是精髓，通过获取对应属性的值，调用了被监听数据的get方法，由此调用了dep.depend()方法。由于Dep.target是存在的，于是往Dep实例中的subs数组添加了一个依赖，也就是watcher对象。
+          Dep.target = null;
+          return value;
+        }
+        update() {
+          //在data发生改变的时候，监听数据的set方法被调用，dep实例调用notify方法，通知subs数组中的每一个依赖调用update方法，update方法会调用回调函数，更新元素的内容。
+          const value = this.vm.data[this.exp];
+          this.cb.call(this.vm, value);
+        }
+      }
+
+      // Dep类，dep实例的作用是收集依赖（watcher实例）以备后面集中通知到watcher
+      class Dep {
+        constructor() {
+          this.subs = [];
+        }
+        addSub(sub) {
+          this.subs.push(sub);
+        }
+        depend() {
+          if (Dep.target) {
+            this.addSub(Dep.target);
+            console.log(this.subs);
+          }
+        }
+        notify() {
+          const subs = this.subs.slice();
+          for (let i = 0; i < subs.length; i++) {
+            subs[i].update();
+          }
+        }
+      }
+
+      // Observer类，用于监听对象中的数据。
+      class Observer {
+        defineReactive(data) {
+          if (!data || typeof data != "object") return;
+          let dep = new Dep();
+          Object.keys(data).forEach((key) => {
+            let value = data[key];
+            this.defineReactive(value); //如果value还是对象，则对该对象递归继续使用 defineReactive 方法，实现深度绑定
+            Object.defineProperty(data, key, {
+              //使用该方法监听对象属性的变化
+              enumerable: true,
+              configurable: true,
+              get: function () {
+                console.log(value, "get method");
+                dep.depend();
+                return value;
+              },
+              set: function (newValue) {
+                console.log(value, "set method");
+                if (value === newValue) return;
+                value = newValue;
+                dep.notify();
+              },
+            });
+          });
+        }
+      }
+
+      // 创建一个Vue类，用于初始化 实现对于对象的响应式处理
+      class Vue {
+        constructor(options = {}) {
+          this.el = options.el;
+          this.exp = options.exp;
+          this.data = options.data;
+          el.innerHTML = this.data[this.exp];
+          // 观察者监听数据 收集依赖 并发出通知
+          let observer = new Observer();
+          observer.defineReactive(this.data);
+          new Watcher(this, this.exp, function (val) {
+            el.innerHTML = val;
+          });
+          return this;
+        }
+      }
+      let el = document.getElementById("test");
+      let vue = new Vue({
+        el: el,
+        exp: "count",
+        data: {
+          count: 123,
+        },
+      });
+      let but = document.getElementById("but");
+      but.addEventListener("click", () => {
+        vue.data.count += 1;
+      });
+    </script>
+  </body>
+</html>
